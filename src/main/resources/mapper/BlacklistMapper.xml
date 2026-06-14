@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.parking.mapper.BlacklistMapper">
+    <insert id="insert" parameterType="com.parking.entity.Blacklist">
+        INSERT INTO blacklist (plate_number, reason) VALUES (#{plateNumber}, #{reason})
+    </insert>
+    <delete id="deleteById">
+        DELETE FROM blacklist WHERE id = #{id}
+    </delete>
+    <select id="findAll" resultType="com.parking.entity.Blacklist">
+        SELECT * FROM blacklist ORDER BY create_time DESC
+    </select>
+    <select id="findByPlateNumber" resultType="com.parking.entity.Blacklist">
+        SELECT * FROM blacklist WHERE plate_number = #{plateNumber}
+    </select>
+</mapper>

@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>停车场系统完整代码与数据库详解</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --accent-color: #3498db;
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-color: #333;
+            --code-bg: #f5f5f5;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #ddd;
+        }
+
+        h1 {
+            color: var(--primary-color);
+        }
+
+        .section-title {
+            background: var(--primary-color);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 5px;
+            margin-top: 40px;
+            margin-bottom: 20px;
+        }
+
+        .subsection-title {
+            color: var(--accent-color);
+            border-bottom: 2px solid var(--accent-color);
+            padding-bottom: 5px;
+            margin-top: 30px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+            color: var(--primary-color);
+            width: 25%;
+        }
+
+        code {
+            font-family: Consolas, Monaco, 'Andale Mono', monospace;
+            background-color: var(--code-bg);
+            padding: 2px 4px;
+            border-radius: 3px;
+            color: #d63384;
+        }
+
+        pre {
+            background-color: #282c34;
+            color: #abb2bf;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-family: Consolas, monospace;
+        }
+        
+        .line-num {
+            color: #5c6370;
+            display: inline-block;
+            width: 30px;
+            user-select: none;
+            text-align: right;
+            margin-right: 10px;
+        }
+        
+        .sql-comment { color: #98c379; font-style: italic; }
+        .sql-keyword { color: #c678dd; font-weight: bold; }
+        .sql-string { color: #e06c75; }
+        .sql-func { color: #61afef; }
+
+        .explanation {
+            background-color: #e8f5e9;
+            border-left: 4px solid #4caf50;
+            padding: 10px;
+            margin: 5px 0 15px 0;
+            font-size: 0.9em;
+        }
+        
+        .new-badge {
+            background-color: #e74c3c;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
+        
+        .line-explanation {
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        
+        .line-explanation-header {
+            background-color: #f1f1f1;
+            padding: 8px 15px;
+            font-weight: bold;
+            border-bottom: 1px solid #ddd;
+            color: #555;
+        }
+        
+        .line-explanation-content {
+            padding: 15px;
+            background-color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📘 停车场管理系统 - 完整代码与数据库详解</h1>
+            <p>基于最新修改的数据库架构与代码逻辑，包含全项目文件清单</p>
+        </header>
+
+        <!-- PART 1: 文件作用详解 -->
+        <h2 class="section-title">📂 第一部分：项目文件全解析</h2>
+        <p>以下是项目中<strong>每一个文件</strong>的详细作用说明，无一遗漏。</p>
+
+        <h3 class="subsection-title">1. 项目根目录 (Root)</h3>
+        <table>
+            <tr><th>文件名</th><th>详细作用</th></tr>
+            <tr>
+                <td><code>pom.xml</code></td>
+                <td><strong>Maven 项目配置</strong>。定义项目依赖（Spring Boot, MyBatis, H2, Thymeleaf等）。</td>
+            </tr>
+            <tr>
+                <td><code>run.bat</code></td>
+                <td><strong>启动脚本</strong>。Windows 下的双击启动脚本。</td>
+            </tr>
+            <tr>
+                <td><code>mvnw.cmd</code></td>
+                <td><strong>Maven Wrapper</strong>。确保在没有安装 Maven 的机器上也能编译项目。</td>
+            </tr>
+            <tr>
+                <td><code>advanced_queries.sql</code></td>
+                <td><strong><span class="new-badge">NEW</span> 高级查询脚本</strong>。包含多表连接、聚合查询、存储过程和触发器的示例代码。</td>
+            </tr>
+            <tr>
+                <td><code>DEFENSE_GUIDE.md</code></td>
+                <td><strong>答辩指南</strong>。包含核心逻辑讲解和常见问题 Q&A。</td>
+            </tr>
+            <tr>
+                <td><code>FINAL_REPORT.md</code></td>
+                <td><strong>最终报告源码</strong>。Markdown 格式的完整实验报告。</td>
+            </tr>
+            <tr>
+                <td><code>FINAL_REPORT_VIEWER.html</code></td>
+                <td><strong>最终报告查看器</strong>。用于渲染 FINAL_REPORT.md 的网页。</td>
+            </tr>
+            <tr>
+                <td><code>REPORT.md</code></td>
+                <td><strong>原始报告源码</strong>。旧版本的实验报告。</td>
+            </tr>
+            <tr>
+                <td><code>REPORT_VIEWER.html</code></td>
+                <td><strong>原始报告查看器</strong>。用于渲染 REPORT.md 的网页。</td>
+            </tr>
+            <tr>
+                <td><code>PROJECT_FULL_GUIDE.html</code></td>
+                <td><strong>项目全指南</strong>。即您当前正在查看的文件。</td>
+            </tr>
+            <tr>
+                <td><code>PROJECT_MAP.html</code></td>
+                <td><strong>项目结构地图</strong>。可视化的项目结构说明。</td>
+            </tr>
+            <tr>
+                <td><code>README.md</code></td>
+                <td><strong>项目说明书</strong>。项目的简要介绍。</td>
+            </tr>
+             <tr>
+                <td><code>parking_db.mv.db</code> / <code>.trace.db</code></td>
+                <td><strong>H2 数据库文件</strong>。如果不是内存模式，数据会存在这里。</td>
+            </tr>
+        </table>
+
+        <h3 class="subsection-title">2. Java 源代码 (src/main/java/com/parking)</h3>
+        
+        <h4>(1) 主程序与配置 (Config)</h4>
+        <table>
+            <tr><th>文件名</th><th>详细作用</th></tr>
+            <tr>
+                <td><code>ParkingSystemApplication.java</code></td>
+                <td><strong>主入口</strong>。启动 Spring Boot 应用。</td>
+            </tr>
+            <tr>
+                <td><code>config/DatabaseTestRunner.java</code></td>
+                <td><strong>启动自检</strong>。系统启动后自动检查数据库连接是否正常。</td>
+            </tr>
+        </table>
+
+        <h4>(2) Controller (控制层 - Web接口)</h4>
+        <table>
+            <tr><th>文件名</th><th>详细作用</th></tr>
+            <tr><td><code>controller/AdminController.java</code></td><td><strong>管理员后台</strong>。处理黑名单管理、用户管理、违规记录页面。</td></tr>
+            <tr><td><code>controller/LoginController.java</code></td><td><strong>认证中心</strong>。处理登录、注册、注销请求。</td></tr>
+            <tr><td><code>controller/ParkingController.java</code></td><td><strong>核心业务</strong>。处理车辆入场、出场、仪表盘显示。</td></tr>
+            <tr><td><code>controller/PaymentController.java</code></td><td><strong>支付中心</strong>。模拟支付流程。</td></tr>
+            <tr><td><code>controller/ReservationController.java</code></td><td><strong>预约中心</strong>。处理车位预约相关请求。</td></tr>
+        </table>
+
+        <h4>(3) Service (业务层 - 逻辑核心)</h4>
+        <table>
+            <tr><th>文件名</th><th>详细作用</th></tr>
+            <tr>
+                <td><code>service/ParkingService.java</code></td>
+                <td><strong>核心大脑</strong>。包含 <code>vehicleEntry</code> (入场校验逻辑) 和 <code>vehicleExit</code> (出场计费逻辑)。</td>
+            </tr>
+            <tr>
+                <td><code>service/UserService.java</code></td>
+                <td><strong>用户服务</strong>。包含用户注册、登录验证逻辑。</td>
+            </tr>
+        </table>
+
+        <h4>(4) Entity (实体层 - 数据库表映射)</h4>
+        <table>
+            <tr><th>文件名</th><th>详细作用</th></tr>
+            <tr><td><code>entity/User.java</code></td><td>用户实体。对应 <code>sys_user</code> 表。</td></tr>
+            <tr><td><code>entity/ParkingSpace.java</code></td><td>车位实体。对应 <code>parking_space</code> 表。</td></tr>
+            <tr><td><code>entity/ParkingRecord.java</code></td><td>停车记录实体。对应 <code>parking_record</code> 表。</td></tr>
+            <tr><td><code>entity/Reservation.java</code></td><td>预约实体。对应 <code>reservation</code> 表。</td></tr>
+            <tr><td><code>entity/Blacklist.java</code></td><td>黑名单实体。对应 <code>blacklist</code> 表。</td></tr>
+            <tr><td><code>entity/FreePlate.java</code></td><td>免费车牌实体。对应 <code>free_plate</code> 表。</td></tr>
+            <tr><td><code>entity/ViolationRecord.java</code></td><td>违规记录实体。对应 <code>violation_record</code> 表。</td></tr>
+        </table>
+
+        <h4>(5) Mapper (持久层 - Java接口)</h4>
+        <table>
+            <tr><th>文件名</th><th>详细作用</th></tr>
+            <tr><td><code>mapper/UserMapper.java</code></td><td>用户表操作接口。</td></tr>
+            <tr><td><code>mapper/ParkingSpaceMapper.java</code></td><td>车位表操作接口。</td></tr>
+            <tr><td><code>mapper/ParkingRecordMapper.java</code></td><td>停车记录表操作接口。</td></tr>
+            <tr><td><code>mapper/ReservationMapper.java</code></td><td>预约表操作接口。</td></tr>
+            <tr><td><code>mapper/BlacklistMapper.java</code></td><td>黑名单表操作接口。</td></tr>
+            <tr><td><code>mapper/FreePlateMapper.java</code></td><td>免费车牌表操作接口。</td></tr>
+            <tr><td><code>mapper/ViolationRecordMapper.java</code></td><td>违规记录表操作接口。</td></tr>
+        </table>
+
+        <h4>(6) Exception (异常处理)</h4>
+        <table>
+            <tr><th>文件名</th><th>详细作用</th></tr>
+            <tr><td><code>exception/GlobalExceptionHandler.java</code></td><td><strong>全局异常捕获</strong>。将业务异常（如“拒绝入场”）转化为友好的前端提示。</td></tr>
+        </table>
+
+        <h3 class="subsection-title">3. 资源文件 (src/main/resources)</h3>
+        
+        <h4>(1) 配置与SQL</h4>
+        <table>
+            <tr><th>文件名</th><th>详细作用</th></tr>
+            <tr>
+                <td><code>application.properties</code></td>
+                <td><strong>系统配置</strong>。配置端口(8080)、数据库连接、Thymeleaf设置。</td>
+            </tr>
+            <tr>
+                <td><code>schema.sql</code></td>
+                <td><strong><span class="new-badge">UPDATED</span> 数据库初始化脚本</strong>。定义所有表、视图、索引，预置数据。</td>
+            </tr>
+        </table>
+
+        <h4>(2) Mapper XML (SQL实现)</h4>
+        <table>
+            <tr><th>文件名</th><th>详细作用</th></tr>
+            <tr><td><code>mapper/UserMapper.xml</code></td><td>用户表 SQL 语句。</td></tr>
+            <tr><td><code>mapper/ParkingSpaceMapper.xml</code></td><td>车位表 SQL 语句。</td></tr>
+            <tr><td><code>mapper/ParkingRecordMapper.xml</code></td><td>停车记录表 SQL 语句。</td></tr>
+            <tr><td><code>mapper/ReservationMapper.xml</code></td><td>预约表 SQL 语句。</td></tr>
+            <tr><td><code>mapper/BlacklistMapper.xml</code></td><td>黑名单表 SQL 语句。</td></tr>
+            <tr><td><code>mapper/FreePlateMapper.xml</code></td><td>免费车牌表 SQL 语句。</td></tr>
+            <tr><td><code>mapper/ViolationRecordMapper.xml</code></td><td>违规记录表 SQL 语句。</td></tr>
+        </table>
+
+        <h4>(3) Templates (前端页面)</h4>
+        <table>
+            <tr><th>文件名</th><th>详细作用</th></tr>
+            <tr><td><code>templates/login.html</code></td><td>登录/注册页。</td></tr>
+            <tr><td><code>templates/dashboard.html</code></td><td>主控制台（车位图）。</td></tr>
+            <tr><td><code>templates/reservations.html</code></td><td>预约管理页。</td></tr>
+            <tr><td><code>templates/records.html</code></td><td>停车历史记录页。</td></tr>
+            <tr><td><code>templates/blacklist.html</code></td><td>黑名单管理页。</td></tr>
+            <tr><td><code>templates/free_plates.html</code></td><td>免费车牌管理页。</td></tr>
+            <tr><td><code>templates/users.html</code></td><td>用户管理页。</td></tr>
+            <tr><td><code>templates/violations.html</code></td><td>违规记录管理页。</td></tr>
+            <tr><td><code>templates/error.html</code></td><td>通用错误提示页。</td></tr>
+        </table>
+
+        <!-- PART 2: 数据库逐行解析 -->
+        <h2 class="section-title">💾 第二部分：数据库架构逐行深度解析 (schema.sql)</h2>
+        <p>以下是对 <code>src/main/resources/schema.sql</code> 文件的<strong>逐行解释</strong>，帮助您彻底理解每一行 SQL 的作用。</p>
+
+        <!-- 1. 清理部分 -->
+        <div class="line-explanation">
+            <div class="line-explanation-header">Line 1-16: 环境清理 (Cleanup)</div>
+            <div class="line-explanation-content">
+<pre>
+<span class="line-num">1-3</span> <span class="sql-comment">-- 注释说明：这是 H2 数据库脚本，用于每次启动重置环境</span>
+<span class="line-num">7-8</span> <span class="sql-keyword">DROP VIEW IF EXISTS</span> v_parking_details; <span class="sql-comment">-- 删除旧视图</span>
+<span class="line-num">9-15</span> <span class="sql-keyword">DROP TABLE IF EXISTS</span> ...; <span class="sql-comment">-- 删除旧表</span>
+</pre>
+                <p><strong>详解：</strong></p>
+                <ul>
+                    <li><strong>目的</strong>：因为使用 H2 内存数据库，为了防止开发过程中修改了表结构但旧数据残留导致报错，每次启动都先“清空现场”。</li>
+                    <li><strong>顺序重要性</strong>：
+                        <ol>
+                            <li>先删<strong>视图 (View)</strong>：因为视图依赖于表。</li>
+                            <li>再删<strong>子表 (Child Table)</strong>：如 <code>parking_record</code>（有外键）。</li>
+                            <li>最后删<strong>父表 (Parent Table)</strong>：如 <code>parking_space</code>（被引用）。</li>
+                        </ol>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- 2. 用户表 -->
+        <div class="line-explanation">
+            <div class="line-explanation-header">Line 22-28: 用户表 (sys_user)</div>
+            <div class="line-explanation-content">
+<pre>
+<span class="line-num">22</span> <span class="sql-keyword">CREATE TABLE</span> sys_user (
+<span class="line-num">23</span>     id <span class="sql-keyword">BIGINT AUTO_INCREMENT PRIMARY KEY</span>, <span class="sql-comment">-- 主键自增</span>
+<span class="line-num">24</span>     username <span class="sql-keyword">VARCHAR</span>(50) <span class="sql-keyword">NOT NULL</span>,      <span class="sql-comment">-- 必填用户名</span>
+<span class="line-num">26</span>     role <span class="sql-keyword">VARCHAR</span>(20) <span class="sql-keyword">DEFAULT</span> <span class="sql-string">'USER'</span>,    <span class="sql-comment">-- 默认为普通用户</span>
+<span class="line-num">27</span>     create_time <span class="sql-keyword">TIMESTAMP DEFAULT CURRENT_TIMESTAMP</span> <span class="sql-comment">-- 自动记录创建时间</span>
+<span class="line-num">28</span> );
+</pre>
+                <p><strong>详解：</strong> 系统所有用户（包括管理员）都存在这张表。<code>role</code> 字段决定了登录后是进入“后台管理”还是“用户预约”界面。</p>
+            </div>
+        </div>
+
+        <!-- 3. 车位表 -->
+        <div class="line-explanation">
+            <div class="line-explanation-header">Line 31-36: 车位表 (parking_space)</div>
+            <div class="line-explanation-content">
+<pre>
+<span class="line-num">31</span> <span class="sql-keyword">CREATE TABLE</span> parking_space (
+<span class="line-num">33</span>     space_number <span class="sql-keyword">VARCHAR</span>(20) <span class="sql-keyword">NOT NULL</span>, <span class="sql-comment">-- 如 "A001"</span>
+<span class="line-num">34</span>     status <span class="sql-keyword">INT DEFAULT</span> 0,              <span class="sql-comment">-- 0:空闲 1:占用 2:预约</span>
+<span class="line-num">35</span>     remark <span class="sql-keyword">VARCHAR</span>(200)                <span class="sql-comment">-- 如 "VIP车位"</span>
+<span class="line-num">36</span> );
+</pre>
+                <p><strong>详解：</strong> <code>status</code> 是系统的核心状态机。前端显示的绿色/红色/黄色方块完全取决于这个字段的值。</p>
+            </div>
+        </div>
+
+        <!-- 4. 停车记录表 -->
+        <div class="line-explanation">
+            <div class="line-explanation-header">Line 39-49: 停车记录表 (parking_record)</div>
+            <div class="line-explanation-content">
+<pre>
+<span class="line-num">39</span> <span class="sql-keyword">CREATE TABLE</span> parking_record (
+<span class="line-num">43</span>     entry_time <span class="sql-keyword">TIMESTAMP NOT NULL</span>,     <span class="sql-comment">-- 入场时间(必填)</span>
+<span class="line-num">44</span>     exit_time <span class="sql-keyword">TIMESTAMP</span>,               <span class="sql-comment">-- 出场时间(先为空)</span>
+<span class="line-num">45</span>     fee <span class="sql-keyword">DECIMAL</span>(10, 2),                <span class="sql-comment">-- 费用(保留2位小数)</span>
+<span class="line-num">48</span>     <span class="sql-keyword">FOREIGN KEY</span> (space_id) <span class="sql-keyword">REFERENCES</span> parking_space(id) <span class="sql-comment">-- 外键关联</span>
+<span class="line-num">49</span> );
+</pre>
+                <p><strong>详解：</strong> 
+                1. <strong>流水表设计</strong>：每次进出产生一条新记录，而不是覆盖旧记录。
+                2. <strong>费用固化</strong>：<code>fee</code> 字段在出场时计算并写入。这样做是为了审计——即使明年每小时单价涨了，也不会影响今年的历史账单金额。
+                </p>
+            </div>
+        </div>
+
+        <!-- 5. 免费车牌表 -->
+        <div class="line-explanation">
+            <div class="line-explanation-header">Line 52-56: 免费车牌表 (free_plate)</div>
+            <div class="line-explanation-content">
+<pre>
+<span class="line-num">52</span> <span class="sql-keyword">CREATE TABLE</span> free_plate (
+<span class="line-num">54</span>     plate_number <span class="sql-keyword">VARCHAR</span>(20) <span class="sql-keyword">NOT NULL UNIQUE</span>, <span class="sql-comment">-- 车牌必须唯一</span>
+<span class="line-num">56</span> );
+</pre>
+                <p><strong>详解：</strong> 简单的白名单表。业务逻辑：出场计费前先查此表，若存在则费用=0。</p>
+            </div>
+        </div>
+
+        <!-- 6. 预约表 -->
+        <div class="line-explanation">
+            <div class="line-explanation-header">Line 59-68: 预约表 (reservation)</div>
+            <div class="line-explanation-content">
+<pre>
+<span class="line-num">59</span> <span class="sql-keyword">CREATE TABLE</span> reservation (
+<span class="line-num">65</span>     status <span class="sql-keyword">INT DEFAULT</span> 0, <span class="sql-comment">-- 0:有效 1:已履约 2:已取消</span>
+<span class="line-num">66</span>     <span class="sql-keyword">FOREIGN KEY</span> (user_id) <span class="sql-keyword">REFERENCES</span> sys_user(id),
+<span class="line-num">67</span>     <span class="sql-keyword">FOREIGN KEY</span> (space_id) <span class="sql-keyword">REFERENCES</span> parking_space(id)
+<span class="line-num">68</span> );
+</pre>
+                <p><strong>详解：</strong> 关联了“谁”(`user_id`)预订了“哪里”(`space_id`)。入场时会检查：如果车位是预约状态，只有预约单上的车牌才能进。</p>
+            </div>
+        </div>
+
+        <!-- 7. 黑名单与违规表 -->
+        <div class="line-explanation">
+            <div class="line-explanation-header">Line 71-85: 风控模块</div>
+            <div class="line-explanation-content">
+<pre>
+<span class="line-num">71</span> <span class="sql-keyword">CREATE TABLE</span> blacklist (...);       <span class="sql-comment">-- 黑名单：入场直接拦截</span>
+<span class="line-num">79</span> <span class="sql-keyword">CREATE TABLE</span> violation_record (...);<span class="sql-comment">-- 违规记录：仅做记录，累积多了进黑名单</span>
+</pre>
+                <p><strong>详解：</strong> 这是系统的安全防线。黑名单表非常简单，只存车牌和原因，追求极速查询。</p>
+            </div>
+        </div>
+
+        <!-- 8. 索引设计 -->
+        <div class="line-explanation">
+            <div class="line-explanation-header">Line 91-99: 索引优化 (Performance) <span class="new-badge">重要</span></div>
+            <div class="line-explanation-content">
+<pre>
+<span class="line-num">91</span> <span class="sql-keyword">CREATE INDEX</span> idx_record_plate <span class="sql-keyword">ON</span> parking_record(plate_number);
+<span class="line-num">92</span> <span class="sql-keyword">CREATE INDEX</span> idx_blacklist_plate <span class="sql-keyword">ON</span> blacklist(plate_number);
+<span class="line-num">96</span> <span class="sql-keyword">CREATE INDEX</span> idx_space_status <span class="sql-keyword">ON</span> parking_space(status);
+</pre>
+                <p><strong>详解：</strong> 
+                <ul>
+                    <li><code>idx_record_plate</code>：车辆入场时，系统需要查询“这辆车是否有未支付的历史订单”。如果没有索引，系统需要扫描全表，速度极慢。</li>
+                    <li><code>idx_space_status</code>：首页显示“剩余车位”时，系统需要`SELECT * FROM space WHERE status=0`。索引能瞬间定位所有空闲车位。</li>
+                </ul>
+                </p>
+            </div>
+        </div>
+
+        <!-- 9. 视图设计 -->
+        <div class="line-explanation">
+            <div class="line-explanation-header">Line 107-121: 实时详情视图 (v_parking_details) <span class="new-badge">NEW</span></div>
+            <div class="line-explanation-content">
+<pre>
+<span class="line-num">107</span> <span class="sql-keyword">CREATE VIEW</span> v_parking_details <span class="sql-keyword">AS</span>
+<span class="line-num">108</span> <span class="sql-keyword">SELECT</span> r.id, s.space_number, r.plate_number...
+<span class="line-num">118</span> <span class="sql-keyword">FROM</span> parking_record r
+<span class="line-num">119</span> <span class="sql-keyword">JOIN</span> parking_space s <span class="sql-keyword">ON</span> r.space_id = s.id
+<span class="line-num">120</span> <span class="sql-keyword">LEFT JOIN</span> free_plate fp <span class="sql-keyword">ON</span> r.plate_number = fp.plate_number
+<span class="line-num">121</span> <span class="sql-keyword">WHERE</span> r.status = 0;
+</pre>
+                <p><strong>详解：</strong> 
+                这是一个<strong>3表连接查询</strong>的封装。
+                <br>管理员想看：“现在谁停在A001？停了多久？是不是免费车？”
+                <br>不需要每次都写复杂的 JOIN SQL，直接查这个视图即可。<code>WHERE r.status = 0</code> 保证了只显示当前在场的车辆。
+                </p>
+            </div>
+        </div>
+
+        <!-- 10. 统计视图 -->
+        <div class="line-explanation">
+            <div class="line-explanation-header">Line 124-131: 每日收入视图 (v_daily_income) <span class="new-badge">NEW</span></div>
+            <div class="line-explanation-content">
+<pre>
+<span class="line-num">124</span> <span class="sql-keyword">CREATE VIEW</span> v_daily_income <span class="sql-keyword">AS</span>
+<span class="line-num">126</span> <span class="sql-keyword">SELECT</span> CAST(exit_time <span class="sql-keyword">AS DATE</span>), <span class="sql-func">SUM</span>(fee)
+<span class="line-num">131</span> <span class="sql-keyword">GROUP BY</span> CAST(exit_time <span class="sql-keyword">AS DATE</span>);
+</pre>
+                <p><strong>详解：</strong> 利用 <code>GROUP BY</code> 预先计算每天的总收入。这是生成财务报表的利器。</p>
+            </div>
+        </div>
+
+        <!-- 11. 初始化数据 -->
+        <div class="line-explanation">
+            <div class="line-explanation-header">Line 138-174: 预置演示数据</div>
+            <div class="line-explanation-content">
+<pre>
+<span class="line-num">138</span> <span class="sql-keyword">INSERT INTO</span> sys_user ...; <span class="sql-comment">-- 预置管理员 admin/123456</span>
+<span class="line-num">143</span> <span class="sql-keyword">INSERT INTO</span> parking_space ...; <span class="sql-comment">-- 预置 A001-A005, B001-B002(VIP)</span>
+<span class="line-num">161</span> <span class="sql-keyword">INSERT INTO</span> parking_record ...; <span class="sql-comment">-- 预置历史订单和正在进行的订单</span>
+</pre>
+                <p><strong>详解：</strong> 
+                为了让您在答辩演示时系统不为空，我们预置了：
+                1. <strong>VIP 车位</strong> (B区)，展示系统对不同车位类型的支持。
+                2. <strong>正在进行的订单</strong> (沪A11111)，您可以直接演示“车辆出场”。
+                3. <strong>黑名单车辆</strong> (BLACK-001)，您可以直接演示“入场被拦截”。
+                </p>
+            </div>
+        </div>
+
+    </div>
+</body>
+</html>

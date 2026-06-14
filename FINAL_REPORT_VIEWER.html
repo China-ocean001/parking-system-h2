@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>停车场管理系统实验报告 - 最终版</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css/github-markdown.min.css">
+    <style>
+        .markdown-body {
+            box-sizing: border-box;
+            min-width: 200px;
+            max-width: 980px;
+            margin: 0 auto;
+            padding: 45px;
+        }
+        @media (max-width: 767px) {
+            .markdown-body {
+                padding: 15px;
+            }
+        }
+        /* 优化Mermaid图表显示 */
+        .mermaid {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body class="markdown-body">
+    <div id="content"></div>
+    
+    <!-- 使用 script 标签存储 Markdown 内容，避免 JS 字符串转义问题 -->
+    <script type="text/template" id="markdown-content">
+# 停车场管理系统 - 课程设计报告
+
+## 1 需求分析
+
+### 1.1 需求分析概述
+随着城市车辆保有量的急剧增加，传统的人工停车管理模式已难以满足高效、准确、实时的管理需求。本系统旨在开发一套基于 Web 的现代化停车场管理系统，服务于**系统管理员**和**普通车主**两类用户。通过本系统，可以实现车辆进出的自动化管理、费用的自动结算、车位资源的实时监控与预约，以及对违规车辆和黑名单车辆的管控。
+
+**系统预期功能**：
+1.  **基础管理**：实现用户（管理员/车主）的注册、登录及权限划分；实现车位资源的数字化管理（增删改查）。
+2.  **核心业务**：
+    *   **入场管理**：自动记录车辆入场时间，强制校验车辆是否在黑名单中或是否存在未支付的历史订单，若存在则拒绝入场。
+    *   **出场计费**：根据入场时间自动计算停车时长和费用（支持免费车牌逻辑），更新车位状态为“空闲”。
+    *   **预约服务**：车主可在线查看空闲车位并进行预约，系统在车辆实际入场时自动关联预约记录。
+3.  **安全管控**：管理员可登记车辆违规行为，并对严重违规或长期欠费车辆实施黑名单管理，系统自动拦截黑名单车辆。
+
+### 1.2 最高层数据流图
+```mermaid
+graph LR
+    User[车主] -- 1.车辆进出请求 --> System((停车场管理系统))
+    User -- 2.预约/缴费 --> System
+    Admin[管理员] -- 3.基础信息管理 --> System
+    Admin -- 4.黑名单/违规录入 --> System
+    System -- 5.费用账单/通知 --> User
+    System -- 6.统计报表/警告 --> Admin
+```
+
+### 1.3 各子系统的数据流图
+1.  **车辆入场子系统**：
+    *   输入：车牌号码。
+    *   处理：查询黑名单表 -> 查询未支付记录表 -> 查询预约表 -> 生成停车记录 -> 更新车位状态。
+    *   输出：入场通知/拒绝原因。
+2.  **车辆出场/计费子系统**：
+    *   输入：车位ID。
+    *   处理：读取入场记录 -> 计算时长 -> 匹配免费车牌表 -> 计算费用 -> 更新停车记录（费用、出场时间） -> 释放车位。
+    *   输出：缴费通知单。
+
+## 2 概要设计
+
+### 2.1 系统功能模块设计
+系统采用 B/S (Browser/Server) 架构，后端基于 Spring Boot 框架，采用经典的 MVC 分层设计模式。
+*   **停车场管理系统**
+    *   **用户模块**：登录、注册、个人中心。
+    *   **车位模块**：车位展示、车位状态管理、车位 CRUD（管理员）。
+    *   **业务模块**：车辆入场、车辆出场、费用支付、车位预约。
+    *   **风控模块**：黑名单管理、违规记录、免费车牌设置。
+
+### 2.2 数据库概念结构设计 (E-R图)
+
+本系统严格遵循 E-R 图设计标准，采用 **Chen's Notation (陈氏表示法)** 进行概念建模。
+
+#### 2.2.1 符号说明
+*   **实体 (Entity)**：使用 **矩形** 表示。
+*   **属性 (Attribute)**：使用 **椭圆** 表示（Mermaid 中使用圆角框模拟）。主键属性加下划线。
+*   **关系 (Relationship)**：使用 **菱形** 表示。
+*   **基数 (Cardinality)**：线段上标注 1:1, 1:N, M:N。
+
+#### 2.2.2 总体 E-R 图
+```mermaid
+flowchart TD
+    %% 样式定义
+    classDef entity fill:#e1f5fe,stroke:#01579b,stroke-width:2px;
+    classDef attr fill:#fff9c4,stroke:#fbc02d,stroke-width:1px,stroke-dasharray: 5 5;
+    classDef pk fill:#fff9c4,stroke:#fbc02d,stroke-width:2px,text-decoration:underline;
+    classDef rel fill:#fce4ec,stroke:#880e4f,stroke-width:2px,shape:rhombus;
+
+    %% 实体定义
+    User[用户]:::entity
+    Space[车位]:::entity
+    Record[停车记录]:::entity
+    Res[预约]:::entity
+    Black[黑名单]:::entity
+    Free[免费车牌]:::entity
+    Vio[违规记录]:::entity
+
+    %% 关系定义
+    R_Init{发起}:::rel
+    R_Occupy{占用}:::rel
+    R_Gen{产生}:::rel
+    R_Match{匹配}:::rel
+
+    %% 关系连接 (基数约束)
+    User ---|1| R_Init ---|N| Res
+    Space ---|1| R_Occupy ---|N| Res
+    Space ---|1| R_Gen ---|N| Record
+    Free ---|1| R_Match ---|N| Record
+
+    %% 属性定义 - 用户
+    User --- U_ID([<u>用户ID</u>]):::pk
+    User --- U_Name([用户名]):::attr
+    User --- U_Role([角色]):::attr
+
+    %% 属性定义 - 车位
+    Space --- S_ID([<u>车位ID</u>]):::pk
+    Space --- S_Num([车位编号]):::attr
+    Space --- S_Status([状态]):::attr
+
+    %% 属性定义 - 预约
+    Res --- Res_ID([<u>预约ID</u>]):::pk
+    Res --- Res_Plate([车牌号]):::attr
+    Res --- Res_Time([预约时间]):::attr
+
+    %% 属性定义 - 停车记录
+    Record --- Rec_ID([<u>记录ID</u>]):::pk
+    Record --- Rec_Plate([车牌号]):::attr
+    Record --- Rec_In([入场时间]):::attr
+    Record --- Rec_Fee([费用]):::attr
+
+    %% 属性定义 - 免费车牌
+    Free --- F_ID([<u>ID</u>]):::pk
+    Free --- F_Plate([车牌号]):::attr
+    
+    %% 独立实体属性 (简化显示)
+    Black --- B_Plate([车牌号]):::attr
+    Vio --- V_Plate([车牌号]):::attr
+```
+
+#### 2.2.3 实体与属性说明
+严格遵循数据字典定义，核心实体说明如下：
+
+1.  **用户 (User)**
+    *   **主键**：`用户ID` (Long, PK) - 唯一标识。
+    *   **属性**：`用户名` (String, Not Null), `密码` (String), `角色` (String, 枚举: ADMIN/USER)。
+    *   **语义**：系统的注册使用者，分为管理员和普通车主。
+
+2.  **车位 (ParkingSpace)**
+    *   **主键**：`车位ID` (Long, PK)。
+    *   **属性**：`车位编号` (String, Unique), `状态` (Int, 0-空闲/1-占用/2-预约), `备注` (String)。
+    *   **语义**：物理停车位资源。
+
+3.  **停车记录 (ParkingRecord)**
+    *   **主键**：`记录ID` (Long, PK)。
+    *   **属性**：`车牌号` (String), `入场时间` (Datetime), `出场时间` (Datetime), `费用` (Decimal), `支付状态` (Int)。
+    *   **外键**：`Space_ID` (FK) -> 关联 `车位` 实体。
+    *   **语义**：记录车辆一次完整的停车过程。
+
+4.  **预约 (Reservation)**
+    *   **主键**：`预约ID` (Long, PK)。
+    *   **属性**：`车牌号` (String), `预约时间` (Datetime), `状态` (Int)。
+    *   **外键**：`User_ID` (FK) -> 关联 `用户`, `Space_ID` (FK) -> 关联 `车位`。
+    *   **语义**：用户对特定车位的预定行为。
+
+#### 2.2.4 关系说明
+1.  **发起 (Initiate)**
+    *   **关联实体**：用户 (1) —— 预约 (N)
+    *   **语义**：一个用户可以发起多次预约，一条预约记录必须属于一个用户。
+    
+2.  **占用 (Occupy)**
+    *   **关联实体**：车位 (1) —— 预约 (N)
+    *   **语义**：一个车位在不同时间段可以被多次预约（历史记录），但同一时刻只能有一条有效预约。
+
+3.  **产生 (Generate)**
+    *   **关联实体**：车位 (1) —— 停车记录 (N)
+    *   **语义**：车辆停入车位后产生停车记录。
+
+4.  **匹配 (Match)**
+    *   **关联实体**：免费车牌 (1) —— 停车记录 (N)
+    *   **语义**：停车记录结算时，若车牌匹配免费车牌表，则费用减免。
+
+#### 2.2.5 约束说明 (Constraints)
+*   **主键约束 (PK)**：所有实体均设有 `id` 作为主键，保证实体唯一性。
+*   **外键约束 (FK)**：
+    *   `reservation.user_id` 引用 `sys_user.id`。
+    *   `reservation.space_id` 引用 `parking_space.id`。
+    *   `parking_record.space_id` 引用 `parking_space.id`。
+*   **唯一约束 (Unique)**：
+    *   `sys_user.username`：用户名不可重复。
+    *   `parking_space.space_number`：车位编号不可重复。
+    *   `free_plate.plate_number`：免费车牌号不可重复。
+
+### 2.3 数据库逻辑结构设计
+根据概念模型，设计了以下核心数据表（满足 3NF 范式）：
+1.  **sys_user** (id, username, password, role, create_time)
+2.  **parking_space** (id, space_number, status, remark)
+3.  **parking_record** (id, plate_number, space_id, entry_time, exit_time, fee, status, payment_status)
+4.  **reservation** (id, user_id, space_id, plate_number, reserve_time, status)
+5.  **blacklist** (id, plate_number, reason, create_time)
+6.  **free_plate** (id, plate_number, description)
+7.  **violation_record** (id, plate_number, violation_type, description, record_time)
+
+## 3 逻辑结构设计和实施
+
+### 3.1 关系模式的转换
+根据概念模型，系统包含以下核心关系模式：
+1.  **sys_user** (<u>id</u>, username, password, role, create_time)
+2.  **parking_space** (<u>id</u>, space_number, status, remark)
+3.  **parking_record** (<u>id</u>, plate_number, space_id, entry_time, exit_time, fee, status, payment_status)
+    *   外键：space_id -> parking_space(id)
+4.  **reservation** (<u>id</u>, user_id, space_id, plate_number, reserve_time, status)
+    *   外键：user_id -> sys_user(id), space_id -> parking_space(id)
+5.  **blacklist** (<u>id</u>, plate_number, reason, create_time)
+6.  **free_plate** (<u>id</u>, plate_number, description)
+7.  **violation_record** (<u>id</u>, plate_number, violation_type, description, record_time)
+
+### 3.2 关系模式的优化
+系统所有关系模式均满足 **第三范式 (3NF)**：
+*   **1NF**：所有字段均为原子值，不可再分。
+*   **2NF**：主键均为单列 ID，不存在非主属性对主键的部分依赖。
+*   **3NF**：不存在非主属性对主键的传递依赖。例如，`parking_record` 中直接存储 `fee` 而非只存时长，虽然 `fee` 可由时长计算得出，但考虑到费率可能随时间调整，为了保证历史账单的不可变性，将费用固化存储符合业务需求，且不违反 3NF 关于依赖传递的定义。
+
+### 3.3 数据字典 (Data Dictionary)
+
+为了确保数据库设计的规范性，本系统建立了详细的数据字典。
+
+#### 3.3.1 用户表 (sys_user)
+| 字段名 | 数据类型 | 长度 | 是否为空 | 键类型 | 描述 |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| id | BIGINT | 20 | NO | PK | 用户唯一标识，自增 |
+| username | VARCHAR | 50 | NO | | 用户登录名 |
+| password | VARCHAR | 100 | NO | | 登录密码 (可加密存储) |
+| role | VARCHAR | 20 | YES | | 用户角色 (ADMIN/USER) |
+| create_time | TIMESTAMP | | YES | | 账号创建时间 |
+
+#### 3.3.2 停车位表 (parking_space)
+| 字段名 | 数据类型 | 长度 | 是否为空 | 键类型 | 描述 |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| id | BIGINT | 20 | NO | PK | 车位唯一标识 |
+| space_number | VARCHAR | 20 | NO | | 车位编号 (如 A001) |
+| status | INT | 1 | YES | | 状态: 0-空闲, 1-占用, 2-预约 |
+| remark | VARCHAR | 200 | YES | | 车位备注信息 |
+
+#### 3.3.3 停车记录表 (parking_record)
+| 字段名 | 数据类型 | 长度 | 是否为空 | 键类型 | 描述 |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| id | BIGINT | 20 | NO | PK | 记录流水号 |
+| plate_number | VARCHAR | 20 | NO | | 入场车牌号 |
+| space_id | BIGINT | 20 | NO | FK | 关联的车位ID |
+| entry_time | TIMESTAMP | | NO | | 车辆入场时间 |
+| exit_time | TIMESTAMP | | YES | | 车辆出场时间 |
+| fee | DECIMAL | 10,2 | YES | | 产生的停车费用 |
+| status | INT | 1 | YES | | 0-停车中, 1-已出场 |
+| payment_status | INT | 1 | YES | | 0-未支付, 1-已支付 |
+
+#### 3.3.4 预约记录表 (reservation)
+| 字段名 | 数据类型 | 长度 | 是否为空 | 键类型 | 描述 |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| id | BIGINT | 20 | NO | PK | 预约流水号 |
+| user_id | BIGINT | 20 | NO | FK | 预约用户ID |
+| space_id | BIGINT | 20 | NO | FK | 预约车位ID |
+| plate_number | VARCHAR | 20 | NO | | 预约使用的车牌 |
+| status | INT | 1 | YES | | 0-有效, 1-已履约, 2-已取消 |
+
+### 3.4 设计用户子模式
+系统设计了基于角色的访问控制 (RBAC) 视图：
+*   **管理员视图 (Admin View)**：拥有对 `sys_user`, `blacklist`, `free_plate`, `violation_record` 的全量读写权限，以及对 `parking_space` 的管理权限。
+*   **普通用户视图 (User View)**：仅拥有对 `parking_space` 的只读权限（查看状态），以及对 `reservation` 表中属于自己记录的读写权限。
+
+### 3.5 数据库高级特性实现
+
+为了提升系统性能和简化复杂查询，设计了以下视图和索引。
+
+#### 3.5.1 视图设计 (Views)
+设计 `v_parking_details` 视图，用于管理员快速查看当前所有停车详情（关联车位表和记录表）。
+```sql
+CREATE VIEW v_parking_details AS
+SELECT 
+    r.id AS record_id,
+    s.space_number,
+    r.plate_number,
+    r.entry_time,
+    TIMESTAMPDIFF(MINUTE, r.entry_time, NOW()) AS duration_minutes
+FROM parking_record r
+JOIN parking_space s ON r.space_id = s.id
+WHERE r.status = 0; -- 仅查询当前在场车辆
+```
+
+#### 3.5.2 索引设计 (Indexes)
+为了加快高频查询的速度，在核心字段上建立索引：
+1.  **车牌号索引**：加快黑名单检查和欠费查询。
+    ```sql
+    CREATE INDEX idx_record_plate ON parking_record(plate_number);
+    CREATE INDEX idx_blacklist_plate ON blacklist(plate_number);
+    ```
+2.  **状态索引**：加快空闲车位查询。
+    ```sql
+    CREATE INDEX idx_space_status ON parking_space(status);
+    ```
+
+### 3.6 设计存储过程
+为了实现“计算停车费用”的数据库层封装，设计如下存储过程（示例）：
+```sql
+CREATE PROCEDURE CalculateParkingFee(IN recordId BIGINT, OUT parkingFee DECIMAL(10,2))
+BEGIN
+    DECLARE entryTime TIMESTAMP;
+    DECLARE exitTime TIMESTAMP;
+    DECLARE durationHours INT;
+    
+    SELECT entry_time, exit_time INTO entryTime, exitTime 
+    FROM parking_record WHERE id = recordId;
+    
+    -- 计算小时数（向上取整）
+    SET durationHours = CEIL(TIMESTAMPDIFF(MINUTE, entryTime, exitTime) / 60.0);
+    
+    -- 基础费率 5元/小时
+    SET parkingFee = durationHours * 5.00;
+    
+    UPDATE parking_record SET fee = parkingFee WHERE id = recordId;
+END;
+```
+*(注：实际项目中该逻辑在 Java Service 层实现以获得更好的跨平台性，此处为满足课程设计要求的数据库层实现示例)*
+
+### 3.7 设计触发器
+为了保证数据完整性，设计触发器：当车辆入场产生记录时，自动将车位状态更新为“占用”。
+```sql
+CREATE TRIGGER AfterEntryInsert
+AFTER INSERT ON parking_record
+FOR EACH ROW
+BEGIN
+    UPDATE parking_space 
+    SET status = 1 
+    WHERE id = NEW.space_id;
+END;
+```
+
+### 3.8 SQL代码实现
+```sql
+-- 1. 用户表
+CREATE TABLE sys_user (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) NOT NULL,
+    password VARCHAR(100) NOT NULL,
+    role VARCHAR(20) DEFAULT 'USER',
+    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 2. 停车位表
+CREATE TABLE parking_space (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    space_number VARCHAR(20) NOT NULL,
+    status INT DEFAULT 0, -- 0-空闲, 1-占用, 2-已预约
+    remark VARCHAR(200)
+);
+
+-- 3. 停车记录表
+CREATE TABLE parking_record (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    plate_number VARCHAR(20) NOT NULL,
+    space_id BIGINT NOT NULL,
+    entry_time TIMESTAMP NOT NULL,
+    exit_time TIMESTAMP,
+    fee DECIMAL(10, 2),
+    status INT DEFAULT 0, -- 0-停车中, 1-已出场
+    payment_status INT DEFAULT 0, -- 0-未支付, 1-已支付
+    FOREIGN KEY (space_id) REFERENCES parking_space(id)
+);
+
+-- 4. 免费车牌表
+CREATE TABLE free_plate (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    plate_number VARCHAR(20) NOT NULL UNIQUE,
+    description VARCHAR(200)
+);
+
+-- 5. 预约记录表
+CREATE TABLE reservation (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    space_id BIGINT NOT NULL,
+    plate_number VARCHAR(20) NOT NULL,
+    reserve_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    status INT DEFAULT 0, -- 0-有效, 1-已使用, 2-已取消
+    FOREIGN KEY (user_id) REFERENCES sys_user(id),
+    FOREIGN KEY (space_id) REFERENCES parking_space(id)
+);
+
+-- 6. 黑名单表
+CREATE TABLE blacklist (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    plate_number VARCHAR(20) NOT NULL UNIQUE,
+    reason VARCHAR(200),
+    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 7. 违规记录表
+CREATE TABLE violation_record (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    plate_number VARCHAR(20) NOT NULL,
+    violation_type VARCHAR(50) NOT NULL,
+    description VARCHAR(200),
+    record_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+## 4 运行环境
+
+为了确保系统稳定运行，推荐的运行环境如下：
+
+*   **硬件环境**：
+    *   CPU：Intel Core i5 及以上或同等性能处理器
+    *   内存：8GB 及以上
+    *   硬盘：256GB SSD 及以上
+*   **软件环境**：
+    *   操作系统：Windows 10 / Windows 11 / Linux (Ubuntu/CentOS)
+    *   Web 服务器：Apache Tomcat 9.0 (Spring Boot 内置)
+    *   数据库服务器：H2 Database (In-Memory 模式，开发测试用) 或 MySQL 5.7/8.0 (生产环境)
+    *   浏览器：Google Chrome, Microsoft Edge, Firefox 等现代浏览器
+
+## 5 开发工具和编程语言
+
+*   **编程语言**：Java (JDK 1.8) - 具有良好的跨平台性和丰富的生态系统。
+*   **开发工具 (IDE)**：IntelliJ IDEA / Trae / VS Code - 提供强大的代码智能提示和调试功能。
+*   **构建工具**：Maven 3.6+ - 用于项目依赖管理和构建打包。
+*   **后端框架**：Spring Boot 2.7.18 - 简化了 Spring 应用的初始搭建和开发过程。
+*   **持久层框架**：MyBatis 2.3.1 - 优秀的持久层框架，支持定制化 SQL、存储过程以及高级映射。
+*   **前端技术**：
+    *   HTML5 / CSS3 / JavaScript
+    *   Thymeleaf：服务器端 Java 模板引擎。
+    *   Bootstrap 5：响应式前端框架，快速构建美观的界面。
+
+## 6 详细设计
+
+### 6.1 预定车位
+**功能描述**：允许注册用户查看当前状态为“空闲”的车位，并提交预约申请。预约成功后，该车位状态将变更为“已预约”，其他用户不可再操作。
+
+**业务流程**：
+1.  用户登录系统，进入“车位管理”页面。
+2.  系统查询 `parking_space` 表，筛选 `status=0` (空闲) 的记录。
+3.  用户点击“预约”按钮，填写预约车牌号。
+4.  **后台校验**：
+    *   检查用户是否已有未完成的预约（防止恶意占位）。
+    *   检查该车牌是否在黑名单 (`blacklist`) 中。
+    *   检查该车牌是否有未支付的欠费记录 (`parking_record` 中 `payment_status=0`)。
+5.  **执行预约**：
+    *   在 `reservation` 表插入一条新记录，状态为有效。
+    *   更新 `parking_space` 表中对应车位的 `status` 为 `2` (已预约)。
+6.  **反馈结果**：向用户显示“预约成功”提示。
+
+**关键代码实现 (ParkingService.java)**：
+```java
+@Transactional
+public void reserveSpace(Long userId, Long spaceId, String plateNumber) {
+    // 1. 基础校验 (黑名单、欠费)
+    checkBlacklistAndUnpaid(plateNumber);
+
+    // 2. 乐观锁检查车位状态
+    ParkingSpace space = parkingSpaceMapper.findById(spaceId);
+    if (space == null || space.getStatus() != 0) {
+        throw new RuntimeException("车位已被占用或不存在");
+    }
+    
+    // 3. 更新车位状态为已预约 (Status=2)
+    space.setStatus(2);
+    parkingSpaceMapper.updateStatus(space);
+
+    // 4. 创建预约记录
+    Reservation res = new Reservation();
+    res.setUserId(userId);
+    res.setSpaceId(spaceId);
+    res.setPlateNumber(plateNumber);
+    res.setStatus(0); // 0=有效
+    reservationMapper.insert(res);
+}
+```
+
+### 6.2 车辆入场
+**功能描述**：车辆到达停车场入口，管理员或系统识别车牌后放行。
+**逻辑设计**：
+1.  校验黑名单与欠费。
+2.  若车位状态为“已预约” (`status=2`)，则校验入场车牌是否与预约车牌一致。
+3.  若一致或车位为空闲，允许入场。
+4.  在 `parking_record` 插入记录，记录 `entry_time`。
+5.  更新 `parking_space` 状态为 `1` (占用)。
+
+### 6.3 车辆出场与计费
+**功能描述**：车辆离开时，系统计算费用并更新状态。
+**逻辑设计**：
+1.  根据 `entry_time` 和当前时间计算停车时长。
+2.  查询 `free_plate` 表，若在免费名单中，费用置为 0。
+3.  否则按 5元/小时 标准计费 (向上取整)。
+4.  更新 `parking_record` 的 `exit_time`, `fee`, `status=1` (已出场)。
+5.  更新 `parking_space` 状态为 `0` (空闲)。
+
+## 7 调试分析
+
+在系统开发与调试过程中，遇到了以下主要问题并成功解决：
+
+1.  **404 路径错误问题**
+    *   **现象**：在 IntelliJ IDEA 中使用外部 Tomcat 运行 WAR 包时，访问登录页面报 404 错误，或者登录后跳转失败。
+    *   **原因分析**：外部 Tomcat 部署时通常会带上项目名作为 Context Path (例如 `/parking_system/login`)，而代码中使用了硬编码的绝对路径 (如 `/login`)，导致路径不匹配。
+    *   **解决方案**：修改所有 HTML 模板文件，使用 Thymeleaf 的标准路径语法 `@{/login}`。这样 Thymeleaf 渲染时会自动在路径前加上 Context Path，确保在任何部署环境下路径都正确。同时，修改启动类继承 `SpringBootServletInitializer` 以支持 WAR 包部署。
+
+2.  **H2 数据库文件锁问题**
+    *   **现象**：启动项目时报错 `Database may be already in use: "Locked by another process"`。
+    *   **原因分析**：最初配置使用 H2 的文件模式 (`jdbc:h2:file:./data/db`)，当项目异常退出或有多个实例运行时，数据库文件会被锁定。
+    *   **解决方案**：将数据库配置修改为内存模式 (`jdbc:h2:mem:parking_db`)。虽然内存模式下重启会丢失数据，但对于开发调试和课程设计演示来说，环境更纯净，且彻底解决了文件锁冲突问题。
+
+3.  **中文乱码与错误提示优化**
+    *   **现象**：入场校验失败时（如黑名单拦截），前端显示的错误信息是乱码或不友好的堆栈信息。
+    *   **解决方案**：在 `application.properties` 中强制设置编码为 UTF-8。在 Controller 层使用 `try-catch` 捕获业务异常，并通过 `RedirectAttributes` 将友好的中文错误信息传递给前端页面显示。
+
+## 8 测试结果
+
+| 测试用例ID | 测试场景 | 输入数据 | 预期结果 | 实际结果 | 测试结论 |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **TC-01** | 正常车辆入场 | 车位:A001, 车牌:京A88888 | 提示入场成功，车位变红(占用) | 与预期一致 | 通过 |
+| **TC-02** | 黑名单车辆入场 | 车位:A002, 车牌:BLACK-001 | 弹出红色警告“拒绝入场：车辆已被列入黑名单” | 与预期一致 | 通过 |
+| **TC-03** | 欠费车辆再入场 | 车位:A003, 车牌:京A88888(有未付订单) | 提示“存在未支付订单，请先完成支付” | 与预期一致 | 通过 |
+| **TC-04** | 车辆出场计费 | 车位:A001, 停车2小时 | 显示费用 10.00 元 | 与预期一致 | 通过 |
+| **TC-05** | 免费车牌出场 | 车位:B001, 车牌:FREE-001 | 显示费用 0.00 元，状态自动变更为已支付 | 与预期一致 | 通过 |
+| **TC-06** | 预定空闲车位 | 车位:A003(空闲), 车牌:京C66666 | 提示预约成功，车位变黄(已预约) | 与预期一致 | 通过 |
+| **TC-07** | 预定已占用车位 | 车位:A001(占用), 车牌:京C66666 | 提示预约失败，车位不可用 | 与预期一致 | 通过 |
+
+## 参考文献
+[1] 王珊，萨师煊. 数据库系统概论[M] 第6版. 高等教育出版社, 2023.
+[2] 董旭阳. SQL编程思想：基于 5 种主流数据库代码实现[M]. 电子工业出版社, 2021.
+[3] 钱进. 数据库设计与开发[M]. 科学出版社, 2016.
+[4] 李唯唯. 数据库原理及应用[M]. 清华大学出版社, 2020.
+[5] Spring Boot Reference Documentation. https://docs.spring.io/spring-boot/docs/current/reference/html/
+
+## 心得体会
+本次课程设计使我深入理解了数据库应用系统的全生命周期开发。
+1.  **理论与实践结合**：将数据库原理（范式、完整性约束）应用到了实际表结构设计中，特别是在设计 `parking_record` 表时，对于是否存储“费用”字段的权衡，让我理解了范式与性能/业务需求之间的平衡。
+2.  **全栈开发能力**：掌握了 Spring Boot + MyBatis + Thymeleaf 的全栈开发流程，解决了前后端交互中的数据绑定和异常处理问题。
+3.  **问题解决**：在开发过程中遇到了 404 路径问题和 H2 数据库锁问题，通过查阅资料和调试最终解决，提升了工程排错能力。
+4.  **不足之处**：目前系统主要依赖应用层保证数据一致性，未来可考虑引入更多数据库层面的存储过程和触发器以提升数据安全性；同时在高并发场景下（如抢车位），目前的实现可能存在竞态条件，未来可引入乐观锁或 Redis 缓存来优化。
+    </script>
+
+    <script>
+        // 从 script 标签读取 Markdown 内容
+        const mdContent = document.getElementById('markdown-content').textContent;
+        
+        // 配置 mermaid
+        mermaid.initialize({ 
+            startOnLoad: true,
+            theme: 'default',
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true,
+                curve: 'basis'
+            }
+        });
+
+        // 渲染 markdown
+        document.getElementById('content').innerHTML = marked.parse(mdContent);
+        
+        // 手动处理 mermaid 代码块
+        // marked.js 会把 ```mermaid 渲染成 <pre><code class="language-mermaid">
+        // 我们需要把它变成 <div class="mermaid"> 让 mermaid.js 识别
+        const mermaidBlocks = document.querySelectorAll('code.language-mermaid');
+        mermaidBlocks.forEach(block => {
+            const div = document.createElement('div');
+            div.className = 'mermaid';
+            div.textContent = block.textContent;
+            block.parentNode.replaceWith(div);
+        });
+        
+        // 重新触发 mermaid 渲染
+        mermaid.run();
+    </script>
+</body>
+</html>

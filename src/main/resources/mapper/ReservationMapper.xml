@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.parking.mapper.ReservationMapper">
+    <insert id="insert" parameterType="com.parking.entity.Reservation">
+        INSERT INTO reservation (user_id, space_id, plate_number, status) 
+        VALUES (#{userId}, #{spaceId}, #{plateNumber}, #{status})
+    </insert>
+    <update id="updateStatus" parameterType="com.parking.entity.Reservation">
+        UPDATE reservation SET status = #{status} WHERE id = #{id}
+    </update>
+    <select id="findByUserId" resultType="com.parking.entity.Reservation">
+        SELECT r.*, s.space_number as spaceNumber 
+        FROM reservation r 
+        LEFT JOIN parking_space s ON r.space_id = s.id 
+        WHERE r.user_id = #{userId}
+        ORDER BY r.reserve_time DESC
+    </select>
+    <select id="findActiveBySpaceId" resultType="com.parking.entity.Reservation">
+        SELECT * FROM reservation WHERE space_id = #{spaceId} AND status = 0
+    </select>
+    <select id="findById" resultType="com.parking.entity.Reservation">
+        SELECT * FROM reservation WHERE id = #{id}
+    </select>
+</mapper>

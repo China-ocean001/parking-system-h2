@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.parking.mapper.FreePlateMapper">
+    <insert id="insert" parameterType="com.parking.entity.FreePlate">
+        INSERT INTO free_plate (plate_number, description) VALUES (#{plateNumber}, #{description})
+    </insert>
+    <delete id="deleteById">
+        DELETE FROM free_plate WHERE id = #{id}
+    </delete>
+    <select id="findAll" resultType="com.parking.entity.FreePlate">
+        SELECT * FROM free_plate
+    </select>
+    <select id="findByPlateNumber" resultType="com.parking.entity.FreePlate">
+        SELECT * FROM free_plate WHERE plate_number = #{plateNumber}
+    </select>
+</mapper>

@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>停车场系统项目代码地图</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --accent-color: #3498db;
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-color: #333;
+            --folder-color: #f1c40f;
+            --java-color: #e67e22;
+            --html-color: #e74c3c;
+            --xml-color: #9b59b6;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #ddd;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+
+        p.subtitle {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .legend {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .legend span {
+            margin: 0 10px;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            color: white;
+        }
+
+        .section-title {
+            color: var(--primary-color);
+            border-left: 5px solid var(--accent-color);
+            padding-left: 15px;
+            margin-top: 40px;
+            margin-bottom: 20px;
+        }
+
+        .file-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            padding: 20px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            border-top: 3px solid transparent;
+        }
+
+        .card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .card.java { border-top-color: var(--java-color); }
+        .card.html { border-top-color: var(--html-color); }
+        .card.xml { border-top-color: var(--xml-color); }
+        .card.config { border-top-color: var(--primary-color); }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        .icon {
+            margin-right: 10px;
+            font-size: 1.2em;
+        }
+
+        .card-desc {
+            font-size: 0.95em;
+            color: #555;
+        }
+
+        .role-tag {
+            display: inline-block;
+            font-size: 0.8em;
+            padding: 2px 8px;
+            border-radius: 12px;
+            background-color: #eee;
+            color: #666;
+            margin-top: 10px;
+        }
+
+        /* Specific role colors */
+        .role-controller { background-color: #e3f2fd; color: #1565c0; }
+        .role-service { background-color: #fff3e0; color: #ef6c00; }
+        .role-entity { background-color: #e8f5e9; color: #2e7d32; }
+        .role-view { background-color: #fce4ec; color: #c2185b; }
+
+        footer {
+            text-align: center;
+            margin-top: 50px;
+            color: #888;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚗 停车场管理系统 - 代码结构地图</h1>
+            <p class="subtitle">直观理解每个文件在系统中的位置与作用</p>
+        </header>
+
+        <div class="legend">
+            <span style="background-color: var(--java-color);">☕ Java 后端逻辑</span>
+            <span style="background-color: var(--html-color);">🌐 HTML 前端页面</span>
+            <span style="background-color: var(--xml-color);">⚙️ XML 数据库映射</span>
+            <span style="background-color: var(--primary-color);">🔧 配置文件</span>
+        </div>
+
+        <!-- 1. Java 核心逻辑 -->
+        <h2 class="section-title">☕ src/main/java (后端大脑)</h2>
+        
+        <h3>🎮 Controller 层 (控制层 - 调度员)</h3>
+        <p style="color:#666; margin-bottom:15px;">负责接收浏览器请求，指挥 Service 干活，最后返回页面。</p>
+        <div class="file-grid">
+            <div class="card java">
+                <div class="card-header"><span class="icon">👮</span>LoginController.java</div>
+                <div class="card-desc">系统的<b>大门保安</b>。处理用户的登录、注册和注销请求。</div>
+                <div class="role-tag role-controller">Web 入口</div>
+            </div>
+            <div class="card java">
+                <div class="card-header"><span class="icon">🚦</span>ParkingController.java</div>
+                <div class="card-desc">系统的<b>核心调度员</b>。处理仪表盘显示、车辆入场/出场、车位增删等核心操作。</div>
+                <div class="role-tag role-controller">Web 入口</div>
+            </div>
+            <div class="card java">
+                <div class="card-header"><span class="icon">📅</span>ReservationController.java</div>
+                <div class="card-desc"><b>预约专员</b>。处理车位预约、查看我的预约、取消预约等请求。</div>
+                <div class="role-tag role-controller">Web 入口</div>
+            </div>
+            <div class="card java">
+                <div class="card-header"><span class="icon">👔</span>AdminController.java</div>
+                <div class="card-desc"><b>管理员后台</b>。管理黑名单、违规记录、用户列表等敏感数据。</div>
+                <div class="role-tag role-controller">Web 入口</div>
+            </div>
+        </div>
+
+        <h3>🧠 Service 层 (业务层 - 核心逻辑)</h3>
+        <p style="color:#666; margin-bottom:15px;">最复杂的逻辑都在这里，处理具体的业务规则。</p>
+        <div class="file-grid">
+            <div class="card java">
+                <div class="card-header"><span class="icon">⚙️</span>ParkingService.java</div>
+                <div class="card-desc"><b>业务大脑</b>。包含车辆入场（查黑名单/预约）、出场计费（算时间/费用）、车位管理的所有逻辑。</div>
+                <div class="role-tag role-service">核心逻辑</div>
+            </div>
+            <div class="card java">
+                <div class="card-header"><span class="icon">👤</span>UserService.java</div>
+                <div class="card-desc"><b>用户管家</b>。负责用户注册时的密码加密、登录时的密码验证。</div>
+                <div class="role-tag role-service">核心逻辑</div>
+            </div>
+        </div>
+
+        <h3>📦 Entity 层 (实体层 - 数据模型)</h3>
+        <p style="color:#666; margin-bottom:15px;">定义数据库表在 Java 代码中的样子。</p>
+        <div class="file-grid">
+            <div class="card java">
+                <div class="card-header"><span class="icon">🅿️</span>ParkingSpace.java</div>
+                <div class="card-desc">对应数据库 <code>parking_space</code> 表（车位号、状态）。</div>
+                <div class="role-tag role-entity">数据模型</div>
+            </div>
+            <div class="card java">
+                <div class="card-header"><span class="icon">📝</span>ParkingRecord.java</div>
+                <div class="card-desc">对应数据库 <code>parking_record</code> 表（入场时间、出场时间、费用）。</div>
+                <div class="role-tag role-entity">数据模型</div>
+            </div>
+            <div class="card java">
+                <div class="card-header"><span class="icon">🚫</span>Blacklist.java</div>
+                <div class="card-desc">对应数据库 <code>blacklist</code> 表（黑名单车牌、拉黑原因）。</div>
+                <div class="role-tag role-entity">数据模型</div>
+            </div>
+        </div>
+
+        <!-- 2. Resources 资源文件 -->
+        <h2 class="section-title">🎨 src/main/resources (页面与配置)</h2>
+
+        <h3>🖥️ Templates (前端页面)</h3>
+        <p style="color:#666; margin-bottom:15px;">用户在浏览器里直接看到的界面。</p>
+        <div class="file-grid">
+            <div class="card html">
+                <div class="card-header"><span class="icon">🔑</span>login.html</div>
+                <div class="card-desc"><b>登录页</b>。用户输入账号密码的界面。</div>
+                <div class="role-tag role-view">前端页面</div>
+            </div>
+            <div class="card html">
+                <div class="card-header"><span class="icon">📊</span>dashboard.html</div>
+                <div class="card-desc"><b>主控台</b>。显示车位方块图，操作入场出场的主界面。</div>
+                <div class="role-tag role-view">前端页面</div>
+            </div>
+            <div class="card html">
+                <div class="card-header"><span class="icon">📅</span>reservations.html</div>
+                <div class="card-desc"><b>预约页</b>。显示空闲车位供用户预约。</div>
+                <div class="role-tag role-view">前端页面</div>
+            </div>
+            <div class="card html">
+                <div class="card-header"><span class="icon">⚠️</span>error.html</div>
+                <div class="card-desc"><b>错误页</b>。系统出错时显示的友好提示页面。</div>
+                <div class="role-tag role-view">前端页面</div>
+            </div>
+        </div>
+
+        <h3>⚙️ Config & SQL (配置与数据)</h3>
+        <div class="file-grid">
+            <div class="card config">
+                <div class="card-header"><span class="icon">🔧</span>application.properties</div>
+                <div class="card-desc"><b>系统总配置</b>。设置数据库连接、端口号(8080)等参数。</div>
+                <div class="role-tag">配置文件</div>
+            </div>
+            <div class="card config">
+                <div class="card-header"><span class="icon">💾</span>schema.sql</div>
+                <div class="card-desc"><b>建表脚本</b>。程序启动时自动运行，创建数据库表结构。</div>
+                <div class="role-tag">数据库脚本</div>
+            </div>
+            <div class="card xml">
+                <div class="card-header"><span class="icon">🗺️</span>Mapper.xml</div>
+                <div class="card-desc"><b>SQL 仓库</b>。存放具体的 SQL 语句（SELECT, INSERT, UPDATE）。</div>
+                <div class="role-tag">数据库映射</div>
+            </div>
+        </div>
+
+        <!-- 3. 根目录文件 -->
+        <h2 class="section-title">📂 项目根目录</h2>
+        <div class="file-grid">
+            <div class="card config">
+                <div class="card-header"><span class="icon">📜</span>pom.xml</div>
+                <div class="card-desc"><b>项目身份证</b>。Maven 配置文件，管理项目依赖（Spring Boot, MySQL等）。</div>
+            </div>
+            <div class="card config">
+                <div class="card-header"><span class="icon">🚀</span>run.bat</div>
+                <div class="card-desc"><b>启动脚本</b>。双击即可编译并运行项目。</div>
+            </div>
+            <div class="card config">
+                <div class="card-header"><span class="icon">📄</span>REPORT.md</div>
+                <div class="card-desc"><b>实验报告</b>。Markdown 格式的课程设计报告。</div>
+            </div>
+        </div>
+
+        <footer>
+            <p>Generated by Trae AI Assistant &copy; 2025</p>
+        </footer>
+    </div>
+</body>
+</html>

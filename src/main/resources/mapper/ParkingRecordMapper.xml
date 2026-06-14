@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.parking.mapper.ParkingRecordMapper">
+    <select id="findAll" resultType="com.parking.entity.ParkingRecord">
+        SELECT r.*, s.space_number as spaceNumber 
+        FROM parking_record r 
+        LEFT JOIN parking_space s ON r.space_id = s.id 
+        ORDER BY r.entry_time DESC
+    </select>
+    <select id="findActiveBySpaceId" resultType="com.parking.entity.ParkingRecord">
+        SELECT * FROM parking_record WHERE space_id = #{spaceId} AND status = 0 LIMIT 1
+    </select>
+    <select id="findById" resultType="com.parking.entity.ParkingRecord">
+        SELECT * FROM parking_record WHERE id = #{id}
+    </select>
+    <select id="findUnpaidByPlateNumber" resultType="com.parking.entity.ParkingRecord">
+        SELECT * FROM parking_record WHERE plate_number = #{plateNumber} AND status = 1 AND payment_status = 0
+    </select>
+    <insert id="insert" parameterType="com.parking.entity.ParkingRecord" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO parking_record (plate_number, space_id, entry_time, status, payment_status) 
+        VALUES (#{plateNumber}, #{spaceId}, #{entryTime}, #{status}, #{paymentStatus})
+    </insert>
+    <update id="update" parameterType="com.parking.entity.ParkingRecord">
+        UPDATE parking_record SET exit_time = #{exitTime}, fee = #{fee}, status = #{status}, payment_status = #{paymentStatus} WHERE id = #{id}
+    </update>
+</mapper>
